@@ -1,0 +1,32 @@
+#!/bin/bash
+set -x
+
+cd $APP_HOME
+
+if [ -d ppapt-database ]; then
+   cd ppapt-database
+   git pull
+else
+  git clone https://github.com/ppapt/ppapt-database.git
+  cd ppapt-database
+fi
+wait4port -s ${MYSQL_HOST} -p 3306
+# wait for the user creation
+sleep 30
+mysql -u root -p "${MYSQL_ROOT_PASSWORD}" -h ${MYSQL_HOST} -P 3306 <mysql/create_db.sql
+
+wait4port -s ${POSTGRES_HOST} -p 5432
+echo "${POSTGRES_HOST}:5432:*:postgres:${POSTGRES_PASSWORD}" >~/.pgpass
+chmod 0600 ~/.pgpass
+psql -U postgres -h ${POSTGRES_HOST} -p 5432 -f postgres/create_db.sql
+
+JAVA=/usr/java/latest/jre/bin/java
+
+JAVA_CMD="${JAVA} $LIQUIBASE_JAVA_OPTIONS -jar /usr/lib/liquibase/liquibase.jar"
+
+PARAMS="--driver=com.mysql.jdbc.Driver --classpath=/usr/lib/liquibase/drivers/mariadb-java-client-${MARIDB_CONNECTOR_VERSION}.jar --changeLogFile=liquibase.changeset.sql --url='jdbc:mysql://${MYSQL_HOST}:3306/ppapt?autoReconnect=true&useSSL=false' --userName=ppapt --password=ppapt"
+${JAVA_CMD} ${PARAMS} update
+
+
+PARAMS="--driver=org.postgresql.Driver --classpath=/usr/lib/liquibase/drivers/ postgresql-${POSTGRES_CONNECTOR_VERSION}.jar --changeLogFile=liquibase.changeset.sql --url='jdbc:postgresql://${POSTGRES_HOST}:5432/ppapt' --userName=ppapt --password=ppapt"
+${JAVA_CMD} ${PARAMS} update

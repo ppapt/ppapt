@@ -1,0 +1,55 @@
+---
+version: '3.7'
+services:
+  mysql:
+    image: mariadb:latest
+    container_name: ppapt-mariadb
+    restart: always
+    volumes:
+      - /data/ppapt/mysql/var/lib/mysql:/var/lib/mysql
+    networks:
+      ppapt:
+        aliases:
+          - mysql
+          - mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=T0pS3cret
+      - MYSQL_USER=ppapt
+      - MYSQL_PASSWORD=ppapt
+      - MYSQL_DATABASE=ppapt
+    ports:
+      - 3306:3306
+  postgres:
+    image: postgres:latest
+    container_name: ppapt-postgres
+    restart: always
+    volumes:
+      - /data/ppapt/postgres/var/lib/postgresql/data:/var/lib/postgresql/data
+    networks:
+      ppapt:
+        aliases:
+          - postgres
+          - postgresql
+    environment:
+      - POSTGRES_PASSWORD=T0pS3cret
+    ports:
+      - 5432:5432
+  liquibase:
+    image: registry.ott-consult.de/ppapt/liquibase:latest
+    depends_on:
+      - mysql
+      - postgres
+    restart: "no"
+    networks:
+      ppapt:
+        aliases:
+          - liquibase
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_ROOT_PASSWORD=T0pS3cret
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PASSWORD=T0pS3cret
+
+networks:
+  ppapt:
+    external: false
