@@ -7,11 +7,13 @@ services:
     restart: always
     volumes:
       - /data/ppapt/mysql/var/lib/mysql:/var/lib/mysql
+      - ./override-mariadb-docker.cnf:/etc/mysql/conf.d/docker.cnf
     networks:
       ppapt:
         aliases:
           - mysql
           - mariadb
+        ipv4_address: 172.27.72.2
     environment:
       - MYSQL_ROOT_PASSWORD=T0pS3cret
       - MYSQL_USER=ppapt
@@ -30,6 +32,7 @@ services:
         aliases:
           - postgres
           - postgresql
+        ipv4_address: 172.27.72.3
     environment:
       - POSTGRES_PASSWORD=T0pS3cret
     ports:
@@ -44,6 +47,7 @@ services:
       ppapt:
         aliases:
           - liquibase
+        ipv4_address: 172.27.72.4
     environment:
       - MYSQL_HOST=mysql
       - MYSQL_ROOT_PASSWORD=T0pS3cret
@@ -52,4 +56,9 @@ services:
 
 networks:
   ppapt:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.27.72.0/24
     external: false
