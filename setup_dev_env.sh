@@ -18,18 +18,18 @@ function install_required() {
         if [ "${APP}" == "docker" ]; then
             local INSTALLED_VERSION=$($APP version|grep "Version:" |awk '{print $2}'|tail -1)
         else
-            local INSTALLED_VERSION=$(${APP} version |awk '{print $3}'|sed -e 's|,||')
+            local INSTALLED_VERSION=$(${APP} version |head -1|awk '{print $3}'|sed -e 's|,||')
         fi
-    if [ "${INSTALLED_VERSION}" < "${VERSION}" ]; then
+    if [ "${INSTALLED_VERSION}" \> "${VERSION}" ]; then
         INSTALL=1
     else
         INSTALL=0
     fi
-    return INSTALL
+    return ${INSTALL}
 fi
 }
 
-install_required go ${GO_VERSION}
+install_required go go${GO_VERSION}
 INSTALL_GO=$?
 if [ ${INSTALL_GO} -ne 0 ]; then
     curl -o /tmp/go.tar.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz
@@ -52,11 +52,7 @@ if [ ${INSTALL_GO} -ne 0 ]; then
         sudo /bin/rm -rf /usr/local/go
     fi
     sudo tar -C /usr/local -xzf /tmp/go.tar.gz
-    sudo cat >/etc/profile.d/golang.sh <<EOF
-GOPATH="$HOME/go"
-PATH="$GOPATH/bin:/usr/local/go/bin:$PATH"
-export GOPATH PATH
-EOF
+    sudo bash -e 'echo -e "GOPATH=\"\$HOME/go\"\nPATH=\"\$GOPATH/bin:/usr/local/go/bin:\$PATH\"\nexport GOPATH PATH\n"'
     /bin/rm /tmp/go.tar.gz
 fi
 
