@@ -12,7 +12,7 @@ else
 fi
 wait4port -s ${MYSQL_HOST} -p 3306
 # wait for the user creation
-sleep 30
+sleep 10
 mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" --host=${MYSQL_HOST} -P 3306 <mysql/create_db.sql
 
 wait4port -s ${POSTGRES_HOST} -p 5432
@@ -20,30 +20,12 @@ echo "${POSTGRES_HOST}:5432:*:postgres:${POSTGRES_PASSWORD}" >~/.pgpass
 chmod 0600 ~/.pgpass
 psql -U postgres -h ${POSTGRES_HOST} -p 5432 -f postgres/create_db.sql
 
-cd /usr/lib/liquibase
 
-JAVA=/usr/java/latest/jre/bin/java
-LIQUIBASE_HOME=/usr/lib/liquibase
-CP='.'
-for i in "$LIQUIBASE_HOME"/liquibase*.jar; do
-    CP="$CP:$i"
-done
-CP="$CP:$LIQUIBASE_HOME/lib/"
-for i in "$LIQUIBASE_HOME"/lib/*.jar; do
-    CP="$CP:$i"
-done
-CP="$CP:$LIQUIBASE_HOME/drivers/"
-for i in "$LIQUIBASE_HOME"/lib/*.jar; do
-    CP="$CP:$i"
-done
+CMD="${LIQUIBASE_HOME}/liquibase"
+#--classpath='.:lib/*.jar:drivers/mariadb-java-client-${MARIADB_CONNECTOR_VERSION}.jar'
+PARAMS="--logLevel=INFO --driver=org.mariadb.jdbc.Driver --changeLogFile=liquibase.changeset.sql --url=jdbc:mariadb://${MYSQL_HOST}:3306/ppapt?autoReconnect=true&useSSL=false --username=ppapt --password=ppapt"
+${CMD} ${PARAMS} update
 
 
-
-JAVA_CMD="${JAVA} -cp ${CP} $LIQUIBASE_JAVA_OPTIONS -jar liquibase.jar"
-
-PARAMS="--driver=com.mysql.jdbc.Driver --classpath='.:lib/*.jar:drivers/mariadb-java-client-${MARIADB_CONNECTOR_VERSION}.jar' --changeLogFile=liquibase.changeset.sql --url='jdbc:mysql://${MYSQL_HOST}:3306/ppapt?autoReconnect=true&useSSL=false' --userName=ppapt --password=ppapt"
-${JAVA_CMD} ${PARAMS} update
-
-
-PARAMS="--driver=org.postgresql.Driver --classpath='.:lib/*.jar:drivers/postgresql-${POSTGRES_CONNECTOR_VERSION}.jar' --changeLogFile=liquibase.changeset.sql --url='jdbc:postgresql://${POSTGRES_HOST}:5432/ppapt' --userName=ppapt --password=ppapt"
-${JAVA_CMD} ${PARAMS} update
+PARAMS="--logLevel=INFO --driver=org.postgresql.Driver --changeLogFile=liquibase.changeset.sql --url=jdbc:postgresql://${POSTGRES_HOST}:5432/ppapt --username=ppapt --password=ppapt"
+${CMD} ${PARAMS} update

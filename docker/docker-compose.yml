@@ -49,9 +49,9 @@ services:
           - liquibase
         ipv4_address: 172.27.72.4
     environment:
-      - MYSQL_HOST=mysql
+      - MYSQL_HOST=172.27.72.2
       - MYSQL_ROOT_PASSWORD=T0pS3cret
-      - POSTGRES_HOST=postgres
+      - POSTGRES_HOST=172.27.72.3
       - POSTGRES_PASSWORD=T0pS3cret
 
 networks:
